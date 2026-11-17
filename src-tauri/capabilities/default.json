@@ -1,0 +1,22 @@
+{
+  "identifier": "main",
+  "description": "Only the local main window can use these commands.",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "clipboard-manager:allow-write-text",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        {
+          "url": "https://languagetool.org"
+        },
+        {
+          "url": "https://languagetool.org/legal/privacy"
+        }
+      ]
+    }
+  ]
+}

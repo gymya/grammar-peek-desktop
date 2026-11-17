@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grammar Peek</title><link rel="stylesheet" href="/src/style.css"><script type="module" src="/src/main.js"></script></head>
+<body><main>
+<header><div class="brand"><span class="icon">G</span><span title="Grammar Peek 0.1.12">文法建議</span></div><button id="hide" class="close" type="button" aria-label="關閉浮窗">×</button></header>
+<p id="status" role="status" aria-live="polite">反白文字後按 <kbd id="shortcut">⌘ / Ctrl + Shift + G</kbd></p>
+<div id="permission" class="notice" hidden><button id="enable-permission" type="button">啟用取字權限</button></div>
+<p id="setup" class="notice" hidden></p>
+<section id="result-card" hidden aria-labelledby="result-title"><div class="section-heading"><h2 id="result-title">修正建議</h2><button id="copy" class="secondary" type="button">複製結果</button></div><div id="result" class="result"></div><div id="deletions"></div><p id="summary"></p></section>
+<details id="editor"><summary>貼上文字</summary><label class="section-heading" for="input">原文 <span id="count">0 / 20,000 bytes</span></label><textarea id="input" placeholder="Paste your text here…" spellcheck="false" maxlength="20000"></textarea><div class="actions"><button id="hide-editor" type="button" class="text-button">隱藏浮窗</button><button id="check" type="button">檢查文字</button></div></details>
+</main></body></html>

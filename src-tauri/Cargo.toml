@@ -1,0 +1,27 @@
+[package]
+name = "grammar-peek-desktop"
+version = "0.1.12"
+description = "A small, on-demand grammar companion"
+edition = "2021"
+rust-version = "1.90"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+tokio = { version = "1", features = ["sync", "time", "process", "io-util"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+accessibility-sys = "0.2"
+core-foundation = "0.10"
+objc2-app-kit = { version = "0.3", default-features = false, features = ["NSWindow", "NSPanel", "NSView", "NSResponder", "NSGraphics", "NSEvent", "NSScreen", "NSWorkspace", "NSRunningApplication", "libc", "block2"] }
+objc2 = "0.6"
+block2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["NSProcessInfo", "NSGeometry"] }
