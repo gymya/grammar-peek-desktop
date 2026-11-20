@@ -1,6 +1,6 @@
 [package]
 name = "grammar-peek-desktop"
-version = "0.1.12"
+version = "0.2.0"
 description = "A small, on-demand grammar companion"
 edition = "2021"
 rust-version = "1.90"
@@ -25,3 +25,6 @@ objc2-app-kit = { version = "0.3", default-features = false, features = ["NSWind
 objc2 = "0.6"
 block2 = "0.6"
 objc2-foundation = { version = "0.3", default-features = false, features = ["NSProcessInfo", "NSGeometry"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.62.2", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_System_Com", "Win32_System_Ole", "Win32_System_Variant", "Win32_System_LibraryLoader", "Win32_System_Threading", "Win32_UI_Accessibility", "Win32_UI_HiDpi", "Win32_UI_WindowsAndMessaging"] }

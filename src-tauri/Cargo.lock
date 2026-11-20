@@ -1511,7 +1511,7 @@ dependencies = [
 
 [[package]]
 name = "grammar-peek-desktop"
-version = "0.1.12"
+version = "0.2.0"
 dependencies = [
  "accessibility-sys",
  "block2",
@@ -1528,6 +1528,7 @@ dependencies = [
  "tauri-plugin-global-shortcut",
  "tauri-plugin-opener",
  "tokio",
+ "windows",
 ]
 
 [[package]]

@@ -1,35 +1,12 @@
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 use std::process::Stdio;
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 use std::time::Duration;
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 use tokio::process::Command;
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 pub async fn selected_text() -> Result<String, String> {
-    #[cfg(target_os = "windows")]
-    let mut command = {
-        let mut command = Command::new("powershell.exe");
-        command.args([
-            "-NoProfile",
-            "-NonInteractive",
-            "-Command",
-            r#"
-$ErrorActionPreference = 'Stop'
-[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-Add-Type -AssemblyName UIAutomationClient
-Add-Type -AssemblyName UIAutomationTypes
-$e = [System.Windows.Automation.AutomationElement]::FocusedElement
-if ($null -eq $e -or $e.Current.IsPassword) { exit 1 }
-$p = $e.GetCurrentPattern([System.Windows.Automation.TextPattern]::Pattern)
-$r = $p.GetSelection()
-if ($r.Count -ne 1) { exit 1 }
-[Console]::Write($r[0].GetText(-1))
-"#,
-        ]);
-        command.creation_flags(0x08000000);
-        command
-    };
     #[cfg(target_os = "linux")]
     let mut command = {
         if std::env::var_os("WAYLAND_DISPLAY").is_some() {
@@ -46,7 +23,7 @@ if ($r.Count -ne 1) { exit 1 }
         .map_err(|_| "無法讀取選取文字。Linux X11 請安裝 xclip；也可以直接貼上。")?;
     if !output.status.success() {
         return Err(
-            "無法讀取選取文字。macOS 請允許輔助使用／自動化權限；若 App 不支援，請直接貼上。"
+            "無法讀取 X11 選取文字；請確認 xclip 可用且來源 App 支援 PRIMARY selection。"
                 .into(),
         );
     }

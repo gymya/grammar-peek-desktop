@@ -2,6 +2,8 @@
 #[cfg(target_os = "macos")]
 mod macos;
 mod selection;
+#[cfg(target_os = "windows")]
+mod windows_platform;
 
 use serde::{Deserialize, Serialize};
 use std::{
@@ -175,7 +177,7 @@ fn hide_popup(app: tauri::AppHandle) -> Result<(), String> {
     }
 }
 
-#[cfg(any(not(target_os = "macos"), test))]
+#[cfg(any(target_os = "linux", test))]
 fn popup_position(
     cursor: (f64, f64),
     origin: (i32, i32),
@@ -188,7 +190,7 @@ fn popup_position(
     let max_y = origin.1 + screen.1.saturating_sub(window.1) as i32;
     (x.clamp(origin.0, max_x), y.clamp(origin.1, max_y))
 }
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 fn show(app: &tauri::AppHandle, cursor: Option<tauri::PhysicalPosition<f64>>) {
     if let Some(window) = app.get_webview_window("main") {
         if let Some(cursor) = cursor {
@@ -219,6 +221,8 @@ fn show(app: &tauri::AppHandle, cursor: Option<tauri::PhysicalPosition<f64>>) {
     }
 }
 fn main() {
+    #[cfg(target_os = "windows")]
+    if windows_platform::worker_main() { return; }
     tauri::Builder::default()
         .manage(AppState {
             client: reqwest::Client::builder()
@@ -246,7 +250,11 @@ fn main() {
                         if let Err(error) = macos::show_panel(app, macos::cursor_position()) {
                             eprintln!("Cannot show panel: {error}");
                         }
-                        #[cfg(not(target_os = "macos"))]
+                        #[cfg(target_os = "windows")]
+                        if let Err(error) = windows_platform::cursor_position().and_then(|point| windows_platform::show(app, point)) {
+                            eprintln!("{error}");
+                        }
+                        #[cfg(target_os = "linux")]
                         show(app, None);
                     }
                     "quit" => app.exit(0),
@@ -261,7 +269,12 @@ fn main() {
                 .ok_or("Missing main webview")?;
             #[cfg(target_os = "macos")]
             macos::initialize_panel(&window)?;
-            #[cfg(not(target_os = "macos"))]
+            #[cfg(target_os = "windows")]
+            {
+                app.manage(windows_platform::ClickMonitor::start(&window)?);
+                windows_platform::show(app.handle(), windows_platform::cursor_position()?)?;
+            }
+            #[cfg(target_os = "linux")]
             window.show()?;
             let wayland =
                 cfg!(target_os = "linux") && std::env::var_os("WAYLAND_DISPLAY").is_some();
@@ -286,7 +299,11 @@ fn main() {
                                 let cursor = macos::cursor_position();
                                 #[cfg(target_os = "macos")]
                                 let source_pid = macos::source_pid();
-                                #[cfg(not(target_os = "macos"))]
+                                #[cfg(target_os = "windows")]
+                                let source = windows_platform::capture_source();
+                                #[cfg(target_os = "windows")]
+                                let cursor = windows_platform::cursor_position();
+                                #[cfg(target_os = "linux")]
                                 let cursor = app
                                     .get_webview_window("main")
                                     .and_then(|window| window.cursor_position().ok());
@@ -295,13 +312,22 @@ fn main() {
                                     // Read before focusing our window, while the source app still owns the selection.
                                     #[cfg(target_os = "macos")]
                                     let result = selection::selected_text(source_pid).await;
-                                    #[cfg(not(target_os = "macos"))]
+                                    #[cfg(target_os = "windows")]
+                                    let result = match source {
+                                        Ok(source) => windows_platform::selected_text(source).await,
+                                        Err(error) => Err(error),
+                                    };
+                                    #[cfg(target_os = "linux")]
                                     let result = selection::selected_text().await;
                                     #[cfg(target_os = "macos")]
                                     if let Err(error) = macos::show_panel(&app, cursor) {
                                         eprintln!("Cannot show panel: {error}");
                                     }
-                                    #[cfg(not(target_os = "macos"))]
+                                    #[cfg(target_os = "windows")]
+                                    if let Err(error) = cursor.and_then(|point| windows_platform::show(&app, point)) {
+                                        eprintln!("{error}");
+                                    }
+                                    #[cfg(target_os = "linux")]
                                     show(&app, cursor);
                                     match result {
                                         Ok(text) => {
@@ -351,8 +377,14 @@ fn main() {
             request_accessibility,
             hide_popup
         ])
-        .run(tauri::generate_context!())
-        .expect("Unable to run Grammar Peek");
+        .build(tauri::generate_context!())
+        .expect("Unable to build Grammar Peek")
+        .run(|_app, event| {
+            if let tauri::RunEvent::Exit = event {
+                #[cfg(target_os = "windows")]
+                if let Some(monitor) = _app.try_state::<windows_platform::ClickMonitor>() { monitor.stop(); }
+            }
+        });
 }
 
 #[cfg(test)]

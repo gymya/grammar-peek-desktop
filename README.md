@@ -2,17 +2,17 @@
 
 獨立的 Rust / Tauri 2 桌面專案，介面使用原生 HTML、CSS、JavaScript。沿用 Grammar Peek Chrome 擴充功能的修正合併規則；原擴充功能不受影響。
 
-## 使用（0.1.12）
+## 使用（0.2.0）
 
 這是一個在目前 App 上方顯示的 **360 × 240 小浮窗**，不再使用大型主視窗。反白文字後按 **⌘⇧G（macOS）／Ctrl+Shift+G（Windows、Linux X11）**，浮窗出現在按快捷鍵時的滑鼠附近，並保持在螢幕範圍內。macOS 使用 `orderFrontRegardless`，不會主動切換來源 App 的焦點；不顯示 Dock 圖示。
 
-綠底顯示新增與替換，滑鼠停留可查看原文，刪除文字另外列出。按「複製結果」後自行貼回來源 App。macOS 點擊浮窗外也會隱藏浮窗；× 會隱藏浮窗並保留快捷鍵；浮窗取得鍵盤焦點時也可按 Esc。展開「貼上文字」可手動檢查，支援 ⌘／Ctrl+Enter。程式常駐選單列／系統匣；關閉視窗只會隱藏，快捷鍵繼續有效。從選單列／系統匣選「顯示浮窗」可重新開啟，選「結束程式」才會退出。
+綠底顯示新增與替換，滑鼠停留可查看原文，刪除文字另外列出。按「複製結果」後自行貼回來源 App。macOS／Windows 點擊浮窗外也會隱藏浮窗；× 會隱藏浮窗並保留快捷鍵；浮窗取得鍵盤焦點時也可按 Esc。展開「貼上文字」可手動檢查，支援 ⌘／Ctrl+Enter。程式常駐選單列／系統匣；關閉視窗只會隱藏，快捷鍵繼續有效。從選單列／系統匣選「顯示浮窗」可重新開啟，選「結束程式」才會退出。
 
 ### 系統支援與取字權限
 
 - **macOS**：使用 Rust 直接呼叫原生 Accessibility API，不再依賴 AppleScript 或 System Events。首次請按浮窗中的「啟用取字權限」，在「系統設定 → 隱私權與安全性 → 輔助使用」允許 **Grammar Peek**。建議先把新版 App 放入 Applications 再授權，避免路徑／版本更換使系統要求重新授權。權限只能由使用者授予。
 - 優先讀取聚焦元素的 AXSelectedText；網頁型 App 可再搜尋目前視窗的選取元素。搜尋限制為 256 個元素／約 4 秒，避免大型頁面卡住。先向來源 App 發送 Chromium/Electron 文件指定的輔助使用啟用訊號；支援的文字欄位也可透過 AXValue 與選取範圍在本機擷取反白片段，僅傳送片段。不讀取密碼欄位，不模擬複製，不覆寫原剪貼簿。如果 GPT 或其他 App 沒有公開可讀的選取內容，浮窗會提示手動複製後貼上，不會改讀整頁或舊剪貼簿。
-- **Windows**：使用內建 Windows PowerShell 與 UI Automation TextPattern。未實作此介面的 App、密碼欄位及較高權限視窗可能無法讀取，請改用貼上。
+- **Windows 10/11 x64**：Rust 直接呼叫 UI Automation 與 Win32，不使用 PowerShell 或剪貼簿取字。取字在隔離程序執行，逾時會終止；安裝與限制見 [Windows 說明](docs/WINDOWS.md)。
 - **Linux X11**：需 `xclip`（Debian/Ubuntu：`sudo apt install xclip`），讀取 PRIMARY selection，取決於來源 App 是否更新選取緩衝區。
 - **Linux Wayland**：可使用浮窗內貼上、檢查和複製；本版不支援全域快捷鍵取字。
 
@@ -56,12 +56,12 @@ npm run tauri -- build
 - Rust：快捷鍵、取字、LanguageTool HTTPS 請求、輸入驗證與限流。
 - `src-tauri/src/macos.rs`：公開 AppKit API 建立 nonactivating NSPanel；直接用 AppKit 滑鼠位置、螢幕可用範圍與面板大小定位，不再同步隱藏視窗座標。顯示／隱藏一律操作同一個 Panel。
 - Tauri：WebView 與 IPC 的生命週期。macOS 將內容視圖移入 NSPanel；原 Tauri 視窗僅保留作為 WebView/IPC 宿主，不參與浮窗定位或顯示。這是客製整合，升級 Tauri 時需驗證焦點與 WebView 行為。
-- macOS 13+ 使用 CanJoinAllApplications；舊版保留 FullScreenAuxiliary 相容處理，全螢幕效果需實機確認。Windows/Linux 使用各自平台的 Tauri 視窗。
+- macOS 13+ 使用 CanJoinAllApplications；舊版保留 FullScreenAuxiliary 相容處理，全螢幕效果需實機確認。Windows 使用 Win32 浮窗與滑鼠監聽，Linux 使用 Tauri 視窗。
 
-唯一日常執行位置：`/Applications/Grammar Peek.app`。不要同時執行 target 或其他舊副本。
+macOS 日常執行位置：`/Applications/Grammar Peek.app`。不要同時執行 target 或其他舊副本。
 目前為完整 ad-hoc 簽章，未做 Developer ID 簽章／公證；更新可能需要使用者重新授予輔助使用權限。
 
-本輪僅執行原生定位的小型測試、正式編譯與簽章檢查。全螢幕選字快捷鍵、多螢幕、鍵盤焦點與 Windows/Linux 實機驗收交由使用者進行，不宣稱已通過。
+0.2.0 已完成 Windows x64 交叉編譯、連結、NSIS 打包與單元測試編譯；未做 Windows 實機測試或程式碼簽章。詳見 [Windows 說明](docs/WINDOWS.md)。
 
 ## Repository 文件
 
